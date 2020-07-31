@@ -8,11 +8,11 @@ date
 
 # Set tempfiles
 # All_domains will contain all domains from all lists, but also duplicates and ones which are whitelisted
-all_domains=$(tempfile)
+all_domains=$(mktemp)
 # Like above, but no duplicates or whitelisted URLs
-all_domains_uniq=$(tempfile)
+all_domains_uniq=$(mktemp)
 # We don't write directly to the zonefile. Instead to this temp file and copy it to the right directory afterwards
-zonefile=$(tempfile)
+zonefile=$(mktemp)
 
 # Define local black and white lists
 # Uncomment if you have no local files
@@ -52,17 +52,17 @@ then
 fi
 
 # Add zone information
-cat $all_domains_uniq | sed -r 's/(.*)/zone "\1" {type master; file "\/etc\/bind\/db.blocked";};/' > $zonefile
+cat $all_domains_uniq | sed -r 's/(.*)/zone "\1" {type master; file "\/var\/named\/blocked.zone";};/' > $zonefile
 
 # Copy temp file to right directory
 # This is for Debian 8, might differ on other systems
-cp $zonefile /etc/bind/named.conf.blocked
+cp $zonefile /etc/named.conf.blocked
 
 # Remove all tempfiles
 rm $all_domains $all_domains_uniq $zonefile StevenBlack-hosts
 
 # Restart bind
-systemctl restart bind9
+systemctl restart named
 
 # For logfile
 echo -e 'done\n\n'
