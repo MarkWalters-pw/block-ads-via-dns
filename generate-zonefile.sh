@@ -30,33 +30,31 @@ wget -q -O StevenBlack-hosts https://raw.githubusercontent.com/StevenBlack/hosts
 #wget -q -O StevenBlack-hosts https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn-social/hosts
 
 # Filter out localhost and broadcast
-cat StevenBlack-hosts | grep '^0.0.0.0' | egrep -v '127.0.0.1|255.255.255.255|::1' | cut -d " " -f 2 >> $all_domains
+grep '^0.0.0.0' StevenBlack-hosts | egrep -v '127.0.0.1|255.255.255.255|::1' | cut -d " " -f 2 >> "$all_domains"
 
 # Add local blacklist
-if [ -f $manuell_blacklist ]
-then
+[ -f $manuell_blacklist ] && {
     cat $manuell_blacklist >> $all_domains
-fi
+}
 
 # Filter out comments and empty lines
-cat $all_domains | egrep -v '^$|#' | sort | uniq  > $all_domains_uniq
+egrep -v '^$|#' "$all_domains" | sort | uniq  > "$all_domains_uniq"
 
 # Apply local whitelist
-if [ -f $manuell_whitelist ]
-then
+[ -f "$manuell_whitelist" ] && {
     for i in $(cat $manuell_whitelist)
     do
         #echo i $i
-        sed --in-place= "/$i/d" $all_domains_uniq
+        sed --in-place= "/$i/d" "$all_domains_uniq"
     done
-fi
+}
 
 # Add zone information
-cat $all_domains_uniq | sed -r 's/(.*)/zone "\1" {type master; file "\/var\/named\/blocked.zone";};/' > $zonefile
+sed -r 's/(.*)/zone "\1" {type master; file "\/var\/named\/blocked.zone";};/' "$all_domains_uniq" > "$zonefile"
 
 # Copy temp file to right directory
 # This is for Debian 8, might differ on other systems
-cp $zonefile /etc/named.conf.blocked
+cp "$zonefile" /etc/named.conf.blocked
 
 # Remove all tempfiles
 rm $all_domains $all_domains_uniq $zonefile StevenBlack-hosts
